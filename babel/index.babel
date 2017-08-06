@@ -1,0 +1,91 @@
+function Header(props) {
+ return (<header>
+   <h1>Brownie Point Masters <i className="fa fa-free-code-camp" aria-hidden="true"></i></h1>
+   <section className="chart-headers"><div className="rank">#</div><div className="ghost-img"></div><div className="userName">Camper</div> <a href="javascript:void(0);" onClick={props.change}><div className="score">{props.scoreType} <i className="fa fa-refresh fa-spin" aria-hidden="true"></i></div></a></section>
+ </header>);
+}
+
+function Camper(props) { 
+  return(
+   <a href={"https://www.freecodecamp.org/"+props.name} target="_blank">
+    <div className={props.num % 2 === 0 ? "even camper" : "odd camper"}>
+    <div className="rank">{props.num}<br/></div>
+      <img src={props.img}/>
+      <div className="userName">{props.name}</div>
+      <div className="score">{props.score}</div>
+    </div>
+    </a>
+  );
+}
+
+// </> Main Component
+class LeaderBoard extends React.Component {
+ constructor(props) {
+  super(props);
+  this.state = {
+   isRecentScore: false,
+   recent: [],
+   allTime: [],
+   activeData: []
+  }
+  this.toggleScores = this.toggleScores.bind(this);
+  this.setData = this.setData.bind(this);
+  this.ajaxCall = this.ajaxCall.bind(this);
+ }
+ 
+  setData(update, data) {
+   this.setState({ [update]: data });
+   this.setState({activeData: this.state.allTime});
+  }
+ 
+ toggleScores() {
+  this.setState({ 
+   isRecentScore: !this.state.isRecentScore,
+   activeData: !this.state.isRecentScore ? this.state.recent : this.state.allTime
+  });
+ }
+ 
+ ajaxCall(url, stateToChange){
+    $.ajax({
+   dataType: "json",
+   url: url,
+   success: (data) => {
+    console.log(data)
+    var dataArr = [];
+     for (var i = 0; i < data.length; i++) {
+      var mem = [];
+      for (var x in data[i]) {
+       mem.push(data[i][x]);
+      }
+      dataArr.push(mem);
+     }
+    this.setData(stateToChange, dataArr);
+   }
+  });
+ }
+ 
+
+ componentDidMount(){
+  this.ajaxCall('https://fcctop100.herokuapp.com/api/fccusers/top/alltime', 'allTime');
+  this.ajaxCall('https://fcctop100.herokuapp.com/api/fccusers/top/recent', 'recent');
+ }
+ 
+ render() {
+  const scoreType = this.state.isRecentScore ? "30 Days" : "All Time";
+  return(
+    <section id="main">
+    
+    <div className="header-ghost"/>
+    <Header scoreType={ scoreType }  change={ this.toggleScores } />
+    
+    <section className='main-board'>
+     { this.state.activeData.map((x, index)=> 
+         <Camper key={ index } num={ index+1 } img={ x[1] } name={ x[0] } score={ this.state.isRecentScore ? x[3] : x[2] } />
+     ) }
+    </section>
+    </section>
+  );
+ }
+};
+
+ReactDOM.render(<LeaderBoard />, document.body);
